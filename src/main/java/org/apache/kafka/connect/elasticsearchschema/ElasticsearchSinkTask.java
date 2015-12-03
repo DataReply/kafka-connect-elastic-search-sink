@@ -22,7 +22,10 @@ import java.net.InetAddress;
 import java.util.*;
 
 /**
- * Created by a.patelli on 11/19/2015.
+ * ElasticsearchSinkTask is a Task that takes records loaded from Kafka and sends them to
+ * another system.
+ *
+ * @author Andrea Patelli
  */
 public class ElasticsearchSinkTask extends SinkTask {
     private static final Logger log = LoggerFactory.getLogger(ElasticsearchSinkConnector.class);
@@ -42,6 +45,11 @@ public class ElasticsearchSinkTask extends SinkTask {
         return new ElasticsearchSinkConnector().version();
     }
 
+    /**
+     * Start the Task. Handles configuration parsing and one-time setup of the task.
+     *
+     * @param props initial configuration
+     */
     @Override
     public void start(Map<String, String> props) {
         clusterName = props.get(ElasticsearchSinkConnector.CLUSTER_NAME);
@@ -79,6 +87,10 @@ public class ElasticsearchSinkTask extends SinkTask {
 
     }
 
+    /**
+     * Put the records in the sink.
+     * @param sinkRecords the set of records to send.
+     */
     @Override
     public void put(Collection<SinkRecord> sinkRecords) {
 //        for(SinkRecord record : sinkRecords) {

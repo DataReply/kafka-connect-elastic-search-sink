@@ -11,7 +11,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by a.patelli on 11/19/2015.
+ * ElasticsearchSinkConnector implement the Connector interface to send Kafka
+ * data to Elasticsearch.
+ *
+ * @author Andrea Patelli
  */
 public class ElasticsearchSinkConnector extends SinkConnector {
     public static final String CLUSTER_NAME = "elasticsearch.cluster.name";
@@ -25,11 +28,21 @@ public class ElasticsearchSinkConnector extends SinkConnector {
     private String indexName;
     private String documentName;
 
+    /**
+     * Get the version of this connector.
+     * @return the version, formatted as a String
+     */
     @Override
     public String version() {
         return AppInfoParser.getVersion();
     }
 
+    /**
+     * Start this Connector. This method will only be called on a clean Connector, i.e. it has
+     * either just been instantiated and initialized or {@link #stop()} has been invoked.
+     *
+     * @param props configuration settings
+     */
     @Override
     public void start(Map<String, String> props) {
         clusterName = props.get(CLUSTER_NAME);
@@ -54,11 +67,21 @@ public class ElasticsearchSinkConnector extends SinkConnector {
         }
     }
 
+    /**
+     * Returns the Task implementation for this Connector.
+     */
     @Override
     public Class<? extends Task> taskClass() {
         return ElasticsearchSinkTask.class;
     }
 
+    /**
+     * Returns a set of configurations for Tasks based on the current configuration,
+     * producing at most count configurations.
+     *
+     * @param maxTasks maximum number of configurations to generate
+     * @return configurations for Tasks
+     */
     @Override
     public List<Map<String, String>> taskConfigs(int maxTasks) {
         ArrayList<Map<String, String>> configs = new ArrayList<Map<String, String>>();
@@ -74,8 +97,11 @@ public class ElasticsearchSinkConnector extends SinkConnector {
         return configs;
     }
 
+    /**
+     * Stop this connector.
+     */
     @Override
     public void stop() {
-        // Nothing to do since FileStreamSinkConnector has no background monitoring.
+        // Nothing to do
     }
 }
