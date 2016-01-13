@@ -33,7 +33,7 @@ public class ElasticsearchSinkTask extends SinkTask {
     private String clusterName;
     private String hosts;
     private Integer bulkSize;
-    private String indexName;
+    private String indexPrefix;
     private String documentName;
     Client client;
 
@@ -54,34 +54,34 @@ public class ElasticsearchSinkTask extends SinkTask {
     public void start(Map<String, String> props) {
         clusterName = props.get(ElasticsearchSinkConnector.CLUSTER_NAME);
         hosts = props.get(ElasticsearchSinkConnector.HOSTS);
-        indexName = props.get(ElasticsearchSinkConnector.INDEX_NAME);
+        indexPrefix = props.get(ElasticsearchSinkConnector.INDEX_PREFIX);
         documentName = props.get(ElasticsearchSinkConnector.DOCUMENT_NAME);
         try {
             bulkSize = Integer.parseInt(props.get(ElasticsearchSinkConnector.BULK_SIZE));
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new ConnectException("Setting elasticsearch.bulk.size should be an integer");
         }
-        List<String> hostsList = new ArrayList<String>(Arrays.asList(hosts.replaceAll(" ", "").split(",")));
+        List<String> hostsList = new ArrayList<>(Arrays.asList(hosts.replaceAll(" ", "").split(",")));
 
         try {
             Settings settings = Settings.settingsBuilder()
                     .put("cluster.name", clusterName).build();
 
-            client =TransportClient.builder().settings(settings).build();
+            client = TransportClient.builder().settings(settings).build();
 
-            for(String host : hostsList) {
+            for (String host : hostsList) {
                 String address;
                 Integer port;
                 String[] hostArray = host.split(":");
                 address = hostArray[0];
                 try {
                     port = Integer.parseInt(hostArray[1]);
-                } catch(Exception e) {
+                } catch (Exception e) {
                     port = 9300;
                 }
-                ((TransportClient)client).addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(address), port));
+                ((TransportClient) client).addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(address), port));
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new ConnectException("Impossible to connect to hosts");
         }
 
@@ -89,6 +89,7 @@ public class ElasticsearchSinkTask extends SinkTask {
 
     /**
      * Put the records in the sink.
+     *
      * @param sinkRecords the set of records to send.
      */
     @Override
@@ -102,24 +103,24 @@ public class ElasticsearchSinkTask extends SinkTask {
 //                    .get();
 //        }
         List<SinkRecord> records = new ArrayList<SinkRecord>(sinkRecords);
-        for(int i = 0; i < records.size(); i++) {
+        for (int i = 0; i < records.size(); i++) {
             BulkRequestBuilder bulkRequest = client.prepareBulk();
-            for(int j = 0; j < bulkSize && i < records.size(); j++, i++) {
+            for (int j = 0; j < bulkSize && i < records.size(); j++, i++) {
                 SinkRecord record = records.get(i);
                 Map<String, Object> jsonMap = toJsonMap((Struct) record.value());
                 bulkRequest.add(
-                    client
-                        .prepareIndex(
-                            indexName,
-                            documentName
-                        )
-                        .setSource(jsonMap)
+                        client
+                                .prepareIndex(
+                                        indexPrefix.concat("_").concat(record.topic()),
+                                        documentName
+                                )
+                                .setSource(jsonMap)
                 );
             }
             i--;
             BulkResponse bulkResponse = bulkRequest.execute().actionGet();
-            if(bulkResponse.hasFailures()) {
-                for(BulkItemResponse item : bulkResponse) {
+            if (bulkResponse.hasFailures()) {
+                for (BulkItemResponse item : bulkResponse) {
                     log.error(item.getFailureMessage());
                 }
             }
@@ -140,10 +141,10 @@ public class ElasticsearchSinkTask extends SinkTask {
     private Map<String, Object> toJsonMap(Struct struct) {
         Map<String, Object> jsonMap = new HashMap<String, Object>(0);
         List<Field> fields = struct.schema().fields();
-        for(Field field : fields) {
+        for (Field field : fields) {
             String fieldName = field.name();
             Schema.Type fieldType = field.schema().type();
-            switch(fieldType) {
+            switch (fieldType) {
                 case STRING:
                     jsonMap.put(fieldName, struct.getString(fieldName));
                     break;

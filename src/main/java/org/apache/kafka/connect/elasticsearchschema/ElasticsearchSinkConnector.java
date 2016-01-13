@@ -20,16 +20,17 @@ public class ElasticsearchSinkConnector extends SinkConnector {
     public static final String CLUSTER_NAME = "elasticsearch.cluster.name";
     public static final String HOSTS = "elasticsearch.hosts";
     public static final String BULK_SIZE = "elasticsearch.bulk.size";
-    public static final String INDEX_NAME = "elasticsearch.index.name";
+    public static final String INDEX_PREFIX = "elasticsearch.index.prefix";
     public static final String DOCUMENT_NAME = "elasticsearch.document.name";
     private String clusterName;
     private String hosts;
     private String bulkSize;
-    private String indexName;
+    private String indexPrefix;
     private String documentName;
 
     /**
      * Get the version of this connector.
+     *
      * @return the version, formatted as a String
      */
     @Override
@@ -48,21 +49,21 @@ public class ElasticsearchSinkConnector extends SinkConnector {
         clusterName = props.get(CLUSTER_NAME);
         hosts = props.get(HOSTS);
         bulkSize = props.get(BULK_SIZE);
-        indexName = props.get(INDEX_NAME);
+        indexPrefix = props.get(INDEX_PREFIX);
         documentName = props.get(DOCUMENT_NAME);
-        if(clusterName == null || clusterName.isEmpty()) {
+        if (clusterName == null || clusterName.isEmpty()) {
             throw new ConnectException("ElasticsearchSinkConnector configuration must include 'elasticsearch.cluster.name' setting");
         }
-        if(hosts == null || hosts.isEmpty()) {
+        if (hosts == null || hosts.isEmpty()) {
             throw new ConnectException("ElasticsearchSinkConnector configuration must include 'elasticserch.hosts' setting");
         }
-        if(bulkSize == null || bulkSize.isEmpty()) {
+        if (bulkSize == null || bulkSize.isEmpty()) {
             throw new ConnectException("ElasticsearchSinkConnector configuration must include 'elasticsearch.bulk.size' setting");
         }
-        if(indexName == null || indexName.isEmpty()) {
-            throw new ConnectException("ElasticsearchSinkConnector configuration must include 'elasticsearch.index.name' setting");
+        if (indexPrefix == null || indexPrefix.isEmpty()) {
+            throw new ConnectException("ElasticsearchSinkConnector configuration must include 'elasticsearch.index.prefix' setting");
         }
-        if(documentName == null || documentName.isEmpty()) {
+        if (documentName == null || documentName.isEmpty()) {
             throw new ConnectException("ElasticsearchSinkConnector configuration must incluede 'elasticsearch.document.name' setting");
         }
     }
@@ -91,7 +92,7 @@ public class ElasticsearchSinkConnector extends SinkConnector {
             config.put(HOSTS, hosts);
             config.put(BULK_SIZE, bulkSize);
             config.put(DOCUMENT_NAME, documentName);
-            config.put(INDEX_NAME, indexName);
+            config.put(INDEX_PREFIX, indexPrefix);
             configs.add(config);
         }
         return configs;
