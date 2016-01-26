@@ -124,12 +124,13 @@ public class ElasticsearchSinkTask extends SinkTask {
             for (int j = 0; j < bulkSize && i < records.size(); j++, i++) {
                 SinkRecord record = records.get(i);
                 Map<String, Object> jsonMap = toJsonMap((Struct) record.value());
-                jsonMap.put("_id", record.kafkaOffset());
+//                jsonMap.put("_id", record.kafkaOffset());
                 bulkRequest.add(
                         client
                                 .prepareIndex(
                                         mapping.get(record.topic()),
-                                        documentName
+                                        documentName,
+                                        Long.toString(record.kafkaOffset())
                                 )
                                 .setSource(jsonMap)
                 );
