@@ -34,8 +34,11 @@ public class ElasticsearchSinkTask extends SinkTask {
     private String hosts;
     private Integer bulkSize;
     private String documentName;
+    private String indexes;
+    private String topics;
     Client client;
 
+    public Map<String, String> mapping;
 
     public ElasticsearchSinkTask() {
     }
@@ -51,15 +54,30 @@ public class ElasticsearchSinkTask extends SinkTask {
      */
     @Override
     public void start(Map<String, String> props) {
+        mapping = new HashMap<>(0);
         clusterName = props.get(ElasticsearchSinkConnector.CLUSTER_NAME);
         hosts = props.get(ElasticsearchSinkConnector.HOSTS);
         documentName = props.get(ElasticsearchSinkConnector.DOCUMENT_NAME);
+        topics = props.get(ElasticsearchSinkConnector.TOPICS);
+        indexes = props.get(ElasticsearchSinkConnector.INDEXES);
+
         try {
             bulkSize = Integer.parseInt(props.get(ElasticsearchSinkConnector.BULK_SIZE));
         } catch (Exception e) {
             throw new ConnectException("Setting elasticsearch.bulk.size should be an integer");
         }
         List<String> hostsList = new ArrayList<>(Arrays.asList(hosts.replaceAll(" ", "").split(",")));
+
+        List<String> topicsList = Arrays.asList(topics.replaceAll(" ", "").split(","));
+        List<String> indexesList = Arrays.asList(indexes.replaceAll(" ", "").split(","));
+
+        if(topicsList.size() != indexesList.size()) {
+            throw new ConnectException("The number of indexes should be the same as the number of topics");
+        }
+
+        for(int i = 0; i < topicsList.size(); i++) {
+            mapping.put(topicsList.get(i), indexesList.get(i));
+        }
 
         try {
             Settings settings = Settings.settingsBuilder()
@@ -110,7 +128,7 @@ public class ElasticsearchSinkTask extends SinkTask {
                 bulkRequest.add(
                         client
                                 .prepareIndex(
-                                        ElasticsearchSinkConnector.mapping.get(record.topic()),
+                                        mapping.get(record.topic()),
                                         documentName
                                 )
                                 .setSource(jsonMap)
