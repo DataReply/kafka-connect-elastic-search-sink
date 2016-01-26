@@ -5,10 +5,7 @@ import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkConnector;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * ElasticsearchSinkConnector implement the Connector interface to send Kafka
@@ -20,13 +17,15 @@ public class ElasticsearchSinkConnector extends SinkConnector {
     public static final String CLUSTER_NAME = "elasticsearch.cluster.name";
     public static final String HOSTS = "elasticsearch.hosts";
     public static final String BULK_SIZE = "elasticsearch.bulk.size";
-    public static final String INDEX_PREFIX = "elasticsearch.index.prefix";
+    public static final String INDEXES= "elasticsearch.indexes";
     public static final String DOCUMENT_NAME = "elasticsearch.document.name";
+    public static final String TOPICS= "topics";
     private String clusterName;
     private String hosts;
     private String bulkSize;
-    private String indexPrefix;
     private String documentName;
+
+    public static final Map<String, String> mapping = new HashMap<>(0);
 
     /**
      * Get the version of this connector.
@@ -49,7 +48,6 @@ public class ElasticsearchSinkConnector extends SinkConnector {
         clusterName = props.get(CLUSTER_NAME);
         hosts = props.get(HOSTS);
         bulkSize = props.get(BULK_SIZE);
-        indexPrefix = props.get(INDEX_PREFIX);
         documentName = props.get(DOCUMENT_NAME);
         if (clusterName == null || clusterName.isEmpty()) {
             throw new ConnectException("ElasticsearchSinkConnector configuration must include 'elasticsearch.cluster.name' setting");
@@ -60,11 +58,28 @@ public class ElasticsearchSinkConnector extends SinkConnector {
         if (bulkSize == null || bulkSize.isEmpty()) {
             throw new ConnectException("ElasticsearchSinkConnector configuration must include 'elasticsearch.bulk.size' setting");
         }
-        if (indexPrefix == null || indexPrefix.isEmpty()) {
-            throw new ConnectException("ElasticsearchSinkConnector configuration must include 'elasticsearch.index.prefix' setting");
-        }
         if (documentName == null || documentName.isEmpty()) {
-            throw new ConnectException("ElasticsearchSinkConnector configuration must incluede 'elasticsearch.document.name' setting");
+            throw new ConnectException("ElasticsearchSinkConnector configuration must include 'elasticsearch.document.name' setting");
+        }
+
+        String topics = props.get(TOPICS);
+        String indexes = props.get(INDEXES);
+        if (topics == null || topics.isEmpty()) {
+            throw new ConnectException("ElasticsearchSinkConnector configuration must include 'topics' setting");
+        }
+        if (indexes == null || indexes.isEmpty()) {
+            throw new ConnectException("ElasticsearchSinkConnector configuration must include 'elasticsearch.document.name' setting");
+        }
+
+        List<String> topicsList = Arrays.asList(topics.replaceAll(" ", "").split(","));
+        List<String> indexesList = Arrays.asList(topics.replaceAll(" ", "").split(","));
+
+        if(topicsList.size() != indexesList.size()) {
+            throw new ConnectException("The number of indexes should be the same as the number of topics");
+        }
+
+        for(int i = 0; i < topicsList.size(); i++) {
+            mapping.put(topicsList.get(i), indexesList.get(i));
         }
     }
 
@@ -92,7 +107,6 @@ public class ElasticsearchSinkConnector extends SinkConnector {
             config.put(HOSTS, hosts);
             config.put(BULK_SIZE, bulkSize);
             config.put(DOCUMENT_NAME, documentName);
-            config.put(INDEX_PREFIX, indexPrefix);
             configs.add(config);
         }
         return configs;

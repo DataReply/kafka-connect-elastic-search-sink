@@ -33,7 +33,6 @@ public class ElasticsearchSinkTask extends SinkTask {
     private String clusterName;
     private String hosts;
     private Integer bulkSize;
-    private String indexPrefix;
     private String documentName;
     Client client;
 
@@ -54,7 +53,6 @@ public class ElasticsearchSinkTask extends SinkTask {
     public void start(Map<String, String> props) {
         clusterName = props.get(ElasticsearchSinkConnector.CLUSTER_NAME);
         hosts = props.get(ElasticsearchSinkConnector.HOSTS);
-        indexPrefix = props.get(ElasticsearchSinkConnector.INDEX_PREFIX);
         documentName = props.get(ElasticsearchSinkConnector.DOCUMENT_NAME);
         try {
             bulkSize = Integer.parseInt(props.get(ElasticsearchSinkConnector.BULK_SIZE));
@@ -112,7 +110,7 @@ public class ElasticsearchSinkTask extends SinkTask {
                 bulkRequest.add(
                         client
                                 .prepareIndex(
-                                        indexPrefix.concat("_").concat(record.topic()),
+                                        ElasticsearchSinkConnector.mapping.get(record.topic()),
                                         documentName
                                 )
                                 .setSource(jsonMap)
