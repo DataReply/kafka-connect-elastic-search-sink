@@ -69,7 +69,7 @@ public class ElasticsearchSinkConnector extends SinkConnector {
             throw new ConnectException("ElasticsearchSinkConnector configuration must include 'topics' setting");
         }
         if (indexes == null || indexes.isEmpty()) {
-            throw new ConnectException("ElasticsearchSinkConnector configuration must include 'elasticsearch.document.name' setting");
+            throw new ConnectException("ElasticsearchSinkConnector configuration must include 'elasticsearch.indexes' setting");
         }
     }
 
