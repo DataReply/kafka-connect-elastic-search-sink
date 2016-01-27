@@ -134,13 +134,11 @@ public class ElasticsearchSinkTask extends SinkTask {
                                 )
                                 .setSource(jsonMap)
                 );
-                log.warn(jsonMap.toString());
             }
             i--;
             BulkResponse bulkResponse = bulkRequest.execute().actionGet();
             if (bulkResponse.hasFailures()) {
                 for (BulkItemResponse item : bulkResponse) {
-                    log.error(item.toString());
                     log.error(item.getFailureMessage());
                 }
             }
