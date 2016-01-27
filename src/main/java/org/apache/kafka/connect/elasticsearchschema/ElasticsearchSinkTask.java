@@ -1,11 +1,13 @@
 package org.apache.kafka.connect.elasticsearchschema;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -13,6 +15,7 @@ import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.slf4j.Logger;
@@ -131,6 +134,9 @@ public class ElasticsearchSinkTask extends SinkTask {
             if (bulkResponse.hasFailures()) {
                 for (BulkItemResponse item : bulkResponse) {
                     log.error(item.getFailureMessage());
+                }
+                if(((TransportClient) client).connectedNodes().isEmpty()) {
+                    throw new RetriableException("Elasticsearch not connected");
                 }
             }
         }
