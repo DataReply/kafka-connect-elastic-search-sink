@@ -110,21 +110,12 @@ public class ElasticsearchSinkTask extends SinkTask {
      */
     @Override
     public void put(Collection<SinkRecord> sinkRecords) {
-//        for(SinkRecord record : sinkRecords) {
-//            //convert the record in json and write it to elasticsearch
-//            Map<String, Object> jsonMap = toJsonMap((Struct)record.value());
-//
-//            client.prepareIndex(record.topic(), record.topic())
-//                    .setSource(jsonMap)
-//                    .get();
-//        }
         List<SinkRecord> records = new ArrayList<SinkRecord>(sinkRecords);
         for (int i = 0; i < records.size(); i++) {
             BulkRequestBuilder bulkRequest = client.prepareBulk();
             for (int j = 0; j < bulkSize && i < records.size(); j++, i++) {
                 SinkRecord record = records.get(i);
                 Map<String, Object> jsonMap = toJsonMap((Struct) record.value());
-//                jsonMap.put("_id", record.kafkaOffset());
                 bulkRequest.add(
                         client
                                 .prepareIndex(
