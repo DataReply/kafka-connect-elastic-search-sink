@@ -113,32 +113,33 @@ public class ElasticsearchSinkTask extends SinkTask {
      */
     @Override
     public void put(Collection<SinkRecord> sinkRecords) {
-        List<SinkRecord> records = new ArrayList<SinkRecord>(sinkRecords);
-        for (int i = 0; i < records.size(); i++) {
-            BulkRequestBuilder bulkRequest = client.prepareBulk();
-            for (int j = 0; j < bulkSize && i < records.size(); j++, i++) {
-                SinkRecord record = records.get(i);
-                Map<String, Object> jsonMap = toJsonMap((Struct) record.value());
-                bulkRequest.add(
-                        client
-                                .prepareIndex(
-                                        mapping.get(record.topic()),
-                                        documentName,
-                                        Long.toString(record.kafkaOffset())
-                                )
-                                .setSource(jsonMap)
-                );
-            }
-            i--;
-            BulkResponse bulkResponse = bulkRequest.execute().actionGet();
-            if (bulkResponse.hasFailures()) {
-                for (BulkItemResponse item : bulkResponse) {
-                    log.error(item.getFailureMessage());
+        try {
+            List<SinkRecord> records = new ArrayList<SinkRecord>(sinkRecords);
+            for (int i = 0; i < records.size(); i++) {
+                BulkRequestBuilder bulkRequest = client.prepareBulk();
+                for (int j = 0; j < bulkSize && i < records.size(); j++, i++) {
+                    SinkRecord record = records.get(i);
+                    Map<String, Object> jsonMap = toJsonMap((Struct) record.value());
+                    bulkRequest.add(
+                            client
+                                    .prepareIndex(
+                                            mapping.get(record.topic()),
+                                            documentName,
+                                            Long.toString(record.kafkaOffset())
+                                    )
+                                    .setSource(jsonMap)
+                    );
                 }
-                if(((TransportClient) client).connectedNodes().isEmpty()) {
-                    throw new RetriableException("Elasticsearch not connected");
+                i--;
+                BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+                if (bulkResponse.hasFailures()) {
+                    for (BulkItemResponse item : bulkResponse) {
+                        log.error(item.getFailureMessage());
+                    }
                 }
             }
+        } catch (Exception e) {
+            throw new RetriableException("Elasticsearch not connected");
         }
     }
 
