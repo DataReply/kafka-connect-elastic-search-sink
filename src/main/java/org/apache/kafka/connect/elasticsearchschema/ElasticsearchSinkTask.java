@@ -129,8 +129,8 @@ public class ElasticsearchSinkTask extends SinkTask {
                         client
                                 .prepareIndex(
                                         mapping.get(record.topic()),
-                                        documentName/*,
-                                        Long.toString(record.kafkaOffset())*/
+                                        documentName,
+                                        Long.toString(record.kafkaOffset())
                                 )
                                 .setSource(jsonMap)
                 );
