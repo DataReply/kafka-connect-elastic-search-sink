@@ -164,6 +164,7 @@ public class ElasticsearchSinkTask extends SinkTask {
         for (Field field : fields) {
             String fieldName = field.name();
             Schema.Type fieldType = field.schema().type();
+            log.warn("{} {}", fieldName, fieldType.name());
             switch (fieldType) {
                 case STRING:
                     jsonMap.put(fieldName, struct.getString(fieldName));
