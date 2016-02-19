@@ -5,7 +5,10 @@ import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkConnector;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * ElasticsearchSinkConnector implement the Connector interface to send Kafka
@@ -17,15 +20,18 @@ public class ElasticsearchSinkConnector extends SinkConnector {
     public static final String CLUSTER_NAME = "elasticsearch.cluster.name";
     public static final String HOSTS = "elasticsearch.hosts";
     public static final String BULK_SIZE = "elasticsearch.bulk.size";
-    public static final String INDEXES= "elasticsearch.indexes";
+    public static final String INDEXES = "elasticsearch.indexes";
     public static final String DOCUMENT_NAME = "elasticsearch.document.name";
-    public static final String TOPICS= "topics";
+    public static final String TOPICS = "topics";
+    public static final String DATE_FORMAT = "date.format";
+
     private String clusterName;
     private String hosts;
     private String bulkSize;
     private String documentName;
     private String topics;
     private String indexes;
+    private String dateFormat;
 
 
     /**
@@ -71,6 +77,7 @@ public class ElasticsearchSinkConnector extends SinkConnector {
         if (indexes == null || indexes.isEmpty()) {
             throw new ConnectException("ElasticsearchSinkConnector configuration must include 'elasticsearch.indexes' setting");
         }
+        dateFormat = props.get(DATE_FORMAT);
     }
 
     /**
@@ -99,6 +106,7 @@ public class ElasticsearchSinkConnector extends SinkConnector {
             config.put(DOCUMENT_NAME, documentName);
             config.put(INDEXES, indexes);
             config.put(TOPICS, topics);
+            config.put(DATE_FORMAT, dateFormat);
             configs.add(config);
         }
         return configs;

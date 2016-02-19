@@ -1,6 +1,5 @@
 package org.apache.kafka.connect.elasticsearchschema;
 
-import com.google.common.collect.ImmutableList;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.data.Field;
@@ -15,13 +14,13 @@ import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -39,6 +38,8 @@ public class ElasticsearchSinkTask extends SinkTask {
     private String documentName;
     private String indexes;
     private String topics;
+    private String dateFormat;
+
     Client client;
 
     public Map<String, String> mapping;
@@ -63,6 +64,7 @@ public class ElasticsearchSinkTask extends SinkTask {
         documentName = props.get(ElasticsearchSinkConnector.DOCUMENT_NAME);
         topics = props.get(ElasticsearchSinkConnector.TOPICS);
         indexes = props.get(ElasticsearchSinkConnector.INDEXES);
+        dateFormat = props.get(ElasticsearchSinkConnector.DATE_FORMAT);
 
         try {
             bulkSize = Integer.parseInt(props.get(ElasticsearchSinkConnector.BULK_SIZE));
@@ -74,11 +76,11 @@ public class ElasticsearchSinkTask extends SinkTask {
         List<String> topicsList = Arrays.asList(topics.replaceAll(" ", "").split(","));
         List<String> indexesList = Arrays.asList(indexes.replaceAll(" ", "").split(","));
 
-        if(topicsList.size() != indexesList.size()) {
+        if (topicsList.size() != indexesList.size()) {
             throw new ConnectException("The number of indexes should be the same as the number of topics");
         }
 
-        for(int i = 0; i < topicsList.size(); i++) {
+        for (int i = 0; i < topicsList.size(); i++) {
             mapping.put(topicsList.get(i), indexesList.get(i));
         }
 
@@ -120,10 +122,16 @@ public class ElasticsearchSinkTask extends SinkTask {
                 for (int j = 0; j < bulkSize && i < records.size(); j++, i++) {
                     SinkRecord record = records.get(i);
                     Map<String, Object> jsonMap = toJsonMap((Struct) record.value());
+                    StringBuilder index = new StringBuilder()
+                            .append(mapping.get(record.topic()));
+                    if (dateFormat != null && !dateFormat.isEmpty()) {
+                        index.append("_")
+                                .append(new SimpleDateFormat(dateFormat).format(new Date()));
+                    }
                     bulkRequest.add(
                             client
                                     .prepareIndex(
-                                            mapping.get(record.topic()),
+                                            index.toString(),
                                             documentName,
                                             Long.toString(record.kafkaOffset())
                                     )
