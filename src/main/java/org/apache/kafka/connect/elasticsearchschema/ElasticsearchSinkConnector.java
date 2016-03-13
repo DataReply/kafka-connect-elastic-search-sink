@@ -106,7 +106,8 @@ public class ElasticsearchSinkConnector extends SinkConnector {
             config.put(DOCUMENT_NAME, documentName);
             config.put(INDEXES, indexes);
             config.put(TOPICS, topics);
-            config.put(DATE_FORMAT, dateFormat);
+            if(dateFormat != null)
+                config.put(DATE_FORMAT, dateFormat);
             configs.add(config);
         }
         return configs;
