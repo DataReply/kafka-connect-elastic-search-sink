@@ -39,6 +39,7 @@ public class ElasticsearchSinkTask extends SinkTask {
     private String indexes;
     private String topics;
     private String dateFormat;
+    private String suffixSeparator;
 
     Client client;
 
@@ -65,6 +66,7 @@ public class ElasticsearchSinkTask extends SinkTask {
         topics = props.get(ElasticsearchSinkConnector.TOPICS);
         indexes = props.get(ElasticsearchSinkConnector.INDEXES);
         dateFormat = props.get(ElasticsearchSinkConnector.DATE_FORMAT);
+        suffixSeparator = props.get(ElasticsearchSinkConnector.SUFFIX_SEPARATOR);
 
         try {
             bulkSize = Integer.parseInt(props.get(ElasticsearchSinkConnector.BULK_SIZE));
@@ -125,14 +127,15 @@ public class ElasticsearchSinkTask extends SinkTask {
                     StringBuilder index = new StringBuilder()
                             .append(mapping.get(record.topic()));
                     if (dateFormat != null && !dateFormat.isEmpty()) {
-                        index.append("_")
+                        index
+                                .append(suffixSeparator)
                                 .append(new SimpleDateFormat(dateFormat).format(new Date()));
                     }
                     bulkRequest.add(
                             client
                                     .prepareIndex(
                                             index.toString(),
-                                            documentName,
+                                            documentName.isEmpty() ? ((Struct) record.value()).schema().name() : documentName,
                                             Long.toString(record.kafkaOffset())
                                     )
                                     .setSource(jsonMap)

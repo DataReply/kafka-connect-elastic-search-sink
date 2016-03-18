@@ -24,6 +24,7 @@ public class ElasticsearchSinkConnector extends SinkConnector {
     public static final String DOCUMENT_NAME = "elasticsearch.document.name";
     public static final String TOPICS = "topics";
     public static final String DATE_FORMAT = "date.format";
+    public static final String SUFFIX_SEPARATOR = "suffix.separator";
 
     private String clusterName;
     private String hosts;
@@ -32,6 +33,7 @@ public class ElasticsearchSinkConnector extends SinkConnector {
     private String topics;
     private String indexes;
     private String dateFormat;
+    private String suffixSeparator;
 
 
     /**
@@ -56,6 +58,7 @@ public class ElasticsearchSinkConnector extends SinkConnector {
         hosts = props.get(HOSTS);
         bulkSize = props.get(BULK_SIZE);
         documentName = props.get(DOCUMENT_NAME);
+        suffixSeparator = props.get(SUFFIX_SEPARATOR);
         if (clusterName == null || clusterName.isEmpty()) {
             throw new ConnectException("ElasticsearchSinkConnector configuration must include 'elasticsearch.cluster.name' setting");
         }
@@ -65,8 +68,8 @@ public class ElasticsearchSinkConnector extends SinkConnector {
         if (bulkSize == null || bulkSize.isEmpty()) {
             throw new ConnectException("ElasticsearchSinkConnector configuration must include 'elasticsearch.bulk.size' setting");
         }
-        if (documentName == null || documentName.isEmpty()) {
-            throw new ConnectException("ElasticsearchSinkConnector configuration must include 'elasticsearch.document.name' setting");
+        if (documentName == null) {
+            documentName = "";
         }
 
         topics = props.get(TOPICS);
@@ -76,6 +79,10 @@ public class ElasticsearchSinkConnector extends SinkConnector {
         }
         if (indexes == null || indexes.isEmpty()) {
             throw new ConnectException("ElasticsearchSinkConnector configuration must include 'elasticsearch.indexes' setting");
+        }
+
+        if (suffixSeparator == null) {
+            suffixSeparator = "-";
         }
         dateFormat = props.get(DATE_FORMAT);
     }
@@ -106,8 +113,9 @@ public class ElasticsearchSinkConnector extends SinkConnector {
             config.put(DOCUMENT_NAME, documentName);
             config.put(INDEXES, indexes);
             config.put(TOPICS, topics);
-            if(dateFormat != null)
+            if (dateFormat != null)
                 config.put(DATE_FORMAT, dateFormat);
+            config.put(SUFFIX_SEPARATOR, suffixSeparator);
             configs.add(config);
         }
         return configs;
