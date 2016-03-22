@@ -162,7 +162,8 @@ public class ElasticsearchSinkTask extends SinkTask {
     @Override
     public void stop() {
         //close connection
-        client.close();
+        if (client != null)
+            client.close();
     }
 
     private Map<String, Object> toJsonMap(Struct struct) {
