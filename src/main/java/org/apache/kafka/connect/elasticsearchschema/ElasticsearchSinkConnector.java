@@ -1,5 +1,6 @@
 package org.apache.kafka.connect.elasticsearchschema;
 
+import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.utils.AppInfoParser;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -128,4 +129,10 @@ public class ElasticsearchSinkConnector extends SinkConnector {
     public void stop() {
         // Nothing to do
     }
+
+	@Override
+	public ConfigDef config() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
