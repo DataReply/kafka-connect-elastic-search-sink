@@ -1,10 +1,22 @@
 package org.apache.kafka.connect.elasticsearchschema;
 
+import java.net.InetAddress;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -18,10 +30,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.net.InetAddress;
-import java.text.SimpleDateFormat;
-import java.util.*;
 
 /**
  * ElasticsearchSinkTask is a Task that takes records loaded from Kafka and sends them to
@@ -124,12 +132,13 @@ public class ElasticsearchSinkTask extends SinkTask {
                 for (int j = 0; j < bulkSize && i < records.size(); j++, i++) {
                     SinkRecord record = records.get(i);
                     Map<String, Object> jsonMap = toJsonMap((Struct) record.value());
+                    String topic = record.topic();
                     StringBuilder index = new StringBuilder()
-                            .append(mapping.get(record.topic()));
+                            .append(mapping.get(topic));
                     if (dateFormat != null && !dateFormat.isEmpty()) {
                         index
                                 .append(suffixSeparator)
-                                .append(new SimpleDateFormat(dateFormat).format(new Date()));
+                                .append(new SimpleDateFormat(dateFormat).format(new java.util.Date()));
                     }
                     bulkRequest.add(
                             client
@@ -142,7 +151,7 @@ public class ElasticsearchSinkTask extends SinkTask {
                     );
                 }
                 i--;
-                BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+                BulkResponse bulkResponse = bulkRequest.get();
                 if (bulkResponse.hasFailures()) {
                     for (BulkItemResponse item : bulkResponse) {
                         log.error(item.getFailureMessage());
@@ -150,6 +159,8 @@ public class ElasticsearchSinkTask extends SinkTask {
                 }
             }
         } catch (Exception e) {
+        	//TODO: this exception is misleading
+        	e.printStackTrace();
             throw new RetriableException("Elasticsearch not connected");
         }
     }
@@ -170,20 +181,31 @@ public class ElasticsearchSinkTask extends SinkTask {
         Map<String, Object> jsonMap = new HashMap<String, Object>(0);
         List<Field> fields = struct.schema().fields();
         for (Field field : fields) {
+        	//TODO: Decimal ??
             String fieldName = field.name();
             Schema.Type fieldType = field.schema().type();
+            String schemaName=field.schema().name();
             switch (fieldType) {
                 case STRING:
                     jsonMap.put(fieldName, struct.getString(fieldName));
                     break;
                 case INT32:
-                    jsonMap.put(fieldName, struct.getInt32(fieldName));
+                	if (Date.LOGICAL_NAME.equals(schemaName) 
+                			|| Time.LOGICAL_NAME.equals(schemaName)) {
+                		jsonMap.put(fieldName, (java.util.Date) struct.get(fieldName));
+                	} else {
+                		jsonMap.put(fieldName, struct.getInt32(fieldName));
+                	}
                     break;
                 case INT16:
                     jsonMap.put(fieldName, struct.getInt16(fieldName));
                     break;
                 case INT64:
-                    jsonMap.put(fieldName, struct.getInt64(fieldName));
+                	if (Timestamp.LOGICAL_NAME.equals(schemaName)) {
+                		jsonMap.put(fieldName, (java.util.Date) struct.get(fieldName));
+                	} else {
+                		jsonMap.put(fieldName, struct.getInt64(fieldName));
+                	}
                     break;
                 case FLOAT32:
                     jsonMap.put(fieldName, struct.getFloat32(fieldName));
